@@ -14,7 +14,8 @@ public class MapBuilder
 
 public record MapLayer( 
 	float transX, float transY, float transZ, 
-	float scaleX, float scaleY, float scaleZ
+	float scaleX, float scaleY, float scaleZ,
+	float octaves = 6
 )
 {
 }

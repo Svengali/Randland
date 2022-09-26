@@ -14,47 +14,18 @@ namespace rl;
 
 public partial class MapControl : UserControl
 {
-	Bitmap _bmp = new Bitmap(128, 128);
+	Bitmap _bmp = new Bitmap(2048, 1024);
 
 	public MapControl()
 	{
 		InitializeComponent();
 
 		//SetStyle( ControlStyles.Opaque, true );
-
-		/*
-		_bmp = new Bitmap( 2048, 2048, PixelFormat.Format32bppRgb );
-
-
-		var data = _bmp.LockBits( new Rectangle( 0, 0, 2048, 1024 ), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb );
-
-		try
-		{
-			unsafe
-			{
-				uint* pBase = (uint*)data.Scan0.ToPointer();
-
-				for( int y = 0; y < 1024; y++ )
-				{
-					for( int x = 0; x < 2048; x++ )
-					{
-						var addr = pBase + y * (data.Stride / 4) + x;
-
-						*addr = 0xff << 8;
-					}
-				}
-			}
-		}
-		finally
-		{
-			_bmp.UnlockBits( data );
-		}
-		*/
 	}
 
 	public void FillinBitmap( MapLayer layer )
 	{
-		_bmp = new Bitmap( 2048, 2048, PixelFormat.Format32bppRgb );
+		_bmp = new Bitmap( 2048, 1024, PixelFormat.Format32bppRgb );
 
 
 		var data = _bmp.LockBits( new Rectangle( 0, 0, 2048, 1024 ), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb );
@@ -71,13 +42,13 @@ public partial class MapControl : UserControl
 			{
 				uint* pBase = (uint*)data.Scan0.ToPointer();
 
-				for( int y = 0; y < 1024; y++ )
+				for( int y = 0; y < 1024; y+= 4 )
 				{
 					var yF = (float)y;
 
 					var perlinY = startPos.y + yF * step.y;
 
-					for( int x = 0; x < 2048; x++ )
+					for( int x = 0; x < 2048; x+= 4 )
 					{
 						var xF = (float)x;
 
@@ -85,9 +56,16 @@ public partial class MapControl : UserControl
 
 						var perlin = new g3.Vector2f( perlinX, perlinY );
 
-						var vFull = rl.Perlin.Fbm( perlin, ( p ) => 2, ( p ) => 0.5f, ( p ) => 4 );
+						var vPerlin = rl.Perlin.Fbm( perlin, ( p ) => 2, ( p ) => 0.5f, ( p ) => 4 );
+
+						var vScaled = vPerlin * layer.scaleZ;
+
+						var vScaledMoved = vScaled + layer.transZ;
+
+						var vFull = vScaledMoved;
 
 						var v = Math.Max( 0.0f, Math.Min( vFull, 1.0f ) );
+
 
 						var byteV = v * 255.0f;
 
@@ -108,7 +86,7 @@ public partial class MapControl : UserControl
 
 	protected override void OnPaint( PaintEventArgs e )
 	{
-		e.Graphics.DrawImageUnscaledAndClipped( _bmp, e.ClipRectangle );
+		e.Graphics.DrawImageUnscaled( _bmp, 0, 0 );
 
 		base.OnPaint( e );
 	}
