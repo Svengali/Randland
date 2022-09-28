@@ -12,9 +12,11 @@ using System.Drawing.Imaging;
 
 namespace rl; 
 
-public partial class MapControl : UserControl
+public partial class MapControl : UserControl, IMapView
 {
 	Bitmap _bmp = new Bitmap(2048, 1024);
+
+	Map _map;
 
 	public MapControl()
 	{
@@ -23,10 +25,18 @@ public partial class MapControl : UserControl
 		//SetStyle( ControlStyles.Opaque, true );
 	}
 
+	public void DoUpdate( Map map )
+	{
+		_map = map;
+
+		FillinBitmap( _map.Layer );
+	}
+
 	public void FillinBitmap( MapLayer layer )
 	{
 		_bmp = new Bitmap( 2048, 1024, PixelFormat.Format32bppRgb );
 
+		// @@@ TODO :: Replace this with shared code from the 
 
 		var data = _bmp.LockBits( new Rectangle( 0, 0, 2048, 1024 ), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb );
 
@@ -56,7 +66,9 @@ public partial class MapControl : UserControl
 
 						var perlin = new g3.Vector2f( perlinX, perlinY );
 
-						var vPerlin = rl.Perlin.Fbm( perlin, ( p ) => 2, ( p ) => 0.5f, ( p ) => 4 );
+						//var vPerlin = rl.Perlin.Fbm( perlin, ( p ) => 2, ( p ) => 0.5f, ( p ) => 4 );
+
+						var vPerlin = layer.Fn( perlin );
 
 						var vScaled = vPerlin * layer.scaleZ;
 

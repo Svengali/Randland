@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
@@ -10,15 +11,18 @@ using System.Windows.Forms;
 
 namespace rl;
 
-public partial class MapForm : Form
+public partial class MapForm : Form, IMapView
 {
-	MapLayer _layer = new ( 1.0f, 1.0f, 1.0f,  1.0f, 1.0f, 1.0f );
+	Map _map = new Map( new MapLayer( (v) => 0.5f, 1.0f, 1.0f, 1.0f,  1.0f, 1.0f, 0.5f ) );
 
-	public MapForm()
+
+	public MapForm( Map map )
 	{
 		InitializeComponent();
 
-		_grid.SelectedObject = _layer;
+		_map = map;
+
+		_grid.SelectedObject = _map.Layer;
 
 		panel1.Size = new Size( 2048, 1024 );
 
@@ -26,11 +30,17 @@ public partial class MapForm : Form
 		Refresh();
 	}
 
+
+	public void DoUpdate( Map map )
+	{
+		panel1.DoUpdate( map );
+	}
+
 	private void panel1_Load( object sender, EventArgs e )
 	{
-		findBestValuesToolStripMenuItem_Click( null, null );
+		//findBestValuesToolStripMenuItem_Click( null, null );
 
-		panel1.FillinBitmap( _layer );
+		panel1.FillinBitmap( _map.Layer );
 
 		Refresh();
 	}
@@ -43,7 +53,7 @@ public partial class MapForm : Form
 
 	private void _grid_PropertyValueChanged( object s, PropertyValueChangedEventArgs e )
 	{
-		panel1.FillinBitmap( _layer );
+		panel1.FillinBitmap( _map.Layer );
 
 		Refresh();
 	}
@@ -55,9 +65,10 @@ public partial class MapForm : Form
 
 	private void findBestValuesToolStripMenuItem_Click( object sender, EventArgs e )
 	{
-		var startPos = new g3.Vector2f( _layer.transX, _layer.transY );
+		// @@@ TODO :: Replace this with shared code from the 
+		var startPos = new g3.Vector2f( _map.Layer.transX, _map.Layer.transY );
 
-		var size = new g3.Vector2f( _layer.scaleX, _layer.scaleY );
+		var size = new g3.Vector2f( _map.Layer.scaleX, _map.Layer.scaleY );
 
 		var step = new g3.Vector2f( 1.0f / 255.0f ) * size;
 
@@ -78,22 +89,26 @@ public partial class MapForm : Form
 
 				var perlin = new g3.Vector2f( perlinX, perlinY );
 
-				var vPerlin = rl.Perlin.Fbm( perlin, ( p ) => 2, ( p ) => 0.5f, ( p ) => 4 );
+				var vPerlin = _map.Layer.Fn( perlin );
+
+				//var vPerlin = rl.Perlin.Fbm( perlin, ( p ) => 2, ( p ) => 0.5f, ( p ) => 4 );
 
 				smallestV = Math.Min( smallestV, vPerlin );
 				largestV  = Math.Max( largestV,  vPerlin );
 			}
 		}
 
-		var spread = largestV - smallestV;
+		var spread = Math.Max( 0.0001f, largestV - smallestV );
 
 		var scale = 1.0f / spread;
 
 		var translate = 0.0f - (smallestV * scale);
 
-		_layer = _layer with { scaleZ = scale, transZ = translate };
+		var newLayer = _map.Layer with { scaleZ = scale, transZ = translate };
 
-		_grid.SelectedObject = _layer;
+		_map = _map with { Layer = newLayer };
+
+		_grid.SelectedObject = _map.Layer;
 
 		Refresh();
 
