@@ -18,9 +18,9 @@ public partial class MapForm : Form, IMapView
 
 	public MapForm( Map map )
 	{
-		InitializeComponent();
-
 		_map = map;
+
+		InitializeComponent();
 
 		_grid.SelectedObject = _map.Layer;
 

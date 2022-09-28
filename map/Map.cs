@@ -24,7 +24,7 @@ public record MapLayer(
 	float octaves = 6
 )
 {
-	public static MapLayer Unit   = new ( (p)=>0.5f, 0, 0, 0, 1.0f, 1.0f, 1.0f );
+	public static MapLayer Unit   = new ( (p)=>0.5f, 0, 0, 0,    1.0f, 1.0f, 1.0f );
 	public static MapLayer Perlin = new ( (p)=>0.5f, 0, 0, 0.5f, 1.0f, 1.0f, 1.0f );
 }
 

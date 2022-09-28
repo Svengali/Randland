@@ -29,7 +29,7 @@
 		private void InitializeComponent()
 		{
 			this._grid = new System.Windows.Forms.PropertyGrid();
-			this.panel1 = new rl.MapControl();
+			this.panel1 = new rl.MapControl( _map );
 			this.menuStrip1 = new System.Windows.Forms.MenuStrip();
 			this.mapToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.findBestValuesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
