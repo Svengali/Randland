@@ -268,7 +268,7 @@ public partial class MapControl : UserControl, IMapView
 							}
 
 							this.Invoke( () => {
-								this.Refresh();
+								this.Invalidate();
 							} );
 
 						} ) );
