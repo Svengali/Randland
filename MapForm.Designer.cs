@@ -104,7 +104,7 @@
 
 		#endregion
 
-		private MapControl panel1;
+		public MapControl panel1;
 		private System.Windows.Forms.PropertyGrid _grid;
 		private System.Windows.Forms.MenuStrip menuStrip1;
 		private System.Windows.Forms.ToolStripMenuItem mapToolStripMenuItem;

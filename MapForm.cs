@@ -31,9 +31,10 @@ public partial class MapForm : Form, IMapView
 	}
 
 
-	public void DoUpdate( Map map )
+	public void DoUpdate( Func<g3.Vector2f, float> Fn )
 	{
-		panel1.DoUpdate( map );
+		_map = _map with { Layer = _map.Layer with { Fn = Fn } };
+		panel1.DoUpdate( Fn );
 	}
 
 	private void panel1_Load( object sender, EventArgs e )

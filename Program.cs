@@ -5,15 +5,31 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace rl;
 
-public record MapExp( string Name, Func<g3.Vector2f, float> Fn, ImmutableList<IMapView> Views )
+//*
+public record MapExp( string Category, string Name, Func<g3.Vector2f, float> Fn, ImmutableList<IMapView> Views )
+{
+
+	public MapExp AddView( IMapView view )
+	{
+		return this with { Views = Views.Add(view) };
+	}
+
+}
+//*/
+
+/*
+public record MapExp( string Name, Map Map, ImmutableList<IMapView> Views )
 {
 
 }
+*/
+
 
 public record WorldFns( string Category, ImmutableList<MapExp> MapExp )
 {
@@ -25,7 +41,12 @@ public record WorldFns( string Category, ImmutableList<MapExp> MapExp )
 		{
 			log.debug( $"-> Replacing {name}" );
 
-			var newList = MapExp.Replace( oldMap, new MapExp( name, fn, oldMap.Views ) );
+			var newList = MapExp.Replace( oldMap, new MapExp( Category, name, fn, oldMap.Views ) );
+
+			foreach( var view in oldMap.Views )
+			{
+				view.DoUpdate( fn );
+			}
 
 			return this with { MapExp = newList };
 		}
@@ -33,11 +54,26 @@ public record WorldFns( string Category, ImmutableList<MapExp> MapExp )
 		{
 			log.debug( $"-> Adding {name}" );
 
-			var newList = MapExp.Add( new MapExp( name, fn, ImmutableList<IMapView>.Empty ) );
+			var newList = MapExp.Add( new MapExp( Category, name, fn, ImmutableList<IMapView>.Empty ) );
 
 			return this with { MapExp = newList };
 		}
 	}
+
+
+	public WorldFns AddView( string name, IMapView view )
+	{
+		var mapExp = MapExp.Find( (m) => m.Name == name );
+
+		if( mapExp == null )
+		{
+			log.warn( $"Could not find {name} in {Category}" );
+			return this;
+		}
+
+		return this with { MapExp = MapExp.Replace( mapExp, mapExp with { Views = mapExp.Views.Add( view ) } ) };
+	}
+
 
 
 }
@@ -49,36 +85,31 @@ internal static class Randland
 
 	static public ConcurrentDictionary<string, WorldFns> s_functions = new();
 
-	static public void AddMapForm( MapForm mapForm, TreeNode leaf )
+	static public void AddMapForm( IMapView mapView, TreeNode leaf )
 	{
-		var parent = leaf.Parent;
+		var cat = leaf.Parent.Name;
+		var name= leaf.Name;
 
-		var found = s_functions.TryGetValue( parent.Name, out var worldFns );
 
-		if( !found )
+		try
 		{
-			log.warn( $"Error looking up {parent.Name}" );
-			return;
-		}
-
-		var mapExp = worldFns.MapExp;
-
-		foreach( var map in mapExp )
-		{
-			if( map.Name == leaf.Name )
+			Monitor.Enter( Randland.s_functions );
+			var catFound = s_functions.TryRemove(cat, out var fns);
+			if( catFound )
 			{
-				log.debug( $"Adding form to {parent.Name}" );
+				var newFns = fns.AddView( name, mapView );
 
-				var newMap = map with { Views = map.Views.Add( mapForm ) };
-
-				var newWorld = worldFns with { MapExp = worldFns.MapExp.Add( newMap ) };
-
-				s_functions.AddOrUpdate( parent.Name, newWorld, (k, v) => newWorld );
-
-				return;
+				s_functions.TryAdd(cat, newFns);
+			}
+			else
+			{
+				log.warn( $"Category {cat} not found." );
 			}
 		}
-
+		finally
+		{
+			Monitor.Exit( Randland.s_functions );
+		}
 	}
 
 	/// <summary>
@@ -95,6 +126,11 @@ internal static class Randland
 		var pos = new g3.Vector3f();
 		var v = rl.Perlin.Noise( 0.0f );
 
+
+		Application.EnableVisualStyles();
+		Application.SetCompatibleTextRenderingDefault( false );
+
+		var randlandForm = new RandlandForm();
 
 		scr.WatchPluginDir( "./scripts/", (ass) => {
 
@@ -141,11 +177,14 @@ internal static class Randland
 				s_functions.AddOrUpdate( name, worldFns, (key, old) => worldFns );
 			}
 
+			if( randlandForm.Visible )
+			{
+				randlandForm.Invoke( randlandForm.CreateNewNodes );
+			}
+
 		} );
 
 
-		Application.EnableVisualStyles( );
-		Application.SetCompatibleTextRenderingDefault( false );
-		Application.Run( new RandlandForm( ) );
+		Application.Run( randlandForm );
 	}
 }

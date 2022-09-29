@@ -14,6 +14,14 @@ using System.Threading;
 
 namespace rl; 
 
+public record MapViewInfo(
+	float transX, float transY, float transZ,
+	float scaleX, float scaleY, float scaleZ
+	)
+{
+
+}
+
 public record Chunk( 
 	MapLayer Layer, 
 	g3.Vector2f PerlinPos, 
@@ -21,11 +29,6 @@ public record Chunk(
 {
 	//public Bitmap Overview = new Bitmap( 256, 256, PixelFormat.Format32bppRgb );
 	public Bitmap Detail   = new Bitmap( 256, 256, PixelFormat.Format32bppRgb );
-
-	public void GenerateOverview( MapControl mapControl )
-	{
-
-	}
 
 	public void GenerateDetail( MapControl mapControl )
 	{
@@ -109,11 +112,11 @@ public partial class MapControl : UserControl, IMapView
 		_map = map;
 	}
 
-	public void DoUpdate( Map map )
+	public void DoUpdate( Func<g3.Vector2f, float> Fn )
 	{
-		_redo = true;
+		_map = _map with { Layer = _map.Layer with { Fn = Fn } };
 
-		_map = map;
+		_redo = true;
 
 		var startPos = new g3.Vector2f( _map.Layer.transX, _map.Layer.transY );
 
@@ -265,7 +268,7 @@ public partial class MapControl : UserControl, IMapView
 			}
 		} );
 
-		DoUpdate( _map );
+		DoUpdate( _map.Layer.Fn );
 	}
 
 	protected override void OnHandleDestroyed( EventArgs e )
