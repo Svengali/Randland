@@ -72,13 +72,28 @@ public record Chunk(
 
 						var v = Math.Max( 0.0f, Math.Min( vFull, 1.0f ) );
 
-						var byteV = v * 255.0f;
+						//V [0..1]
 
-						var byteAsByte = (uint)byteV;
+						uint final = 0x00;
+
+						if( v < 0.5f )
+						{
+							var water = v * 2.0f;
+							var finalF = water * 255.0f;
+							final = (uint)finalF;
+						}
+						else
+						{
+							var byteV = v * 255.0f;
+
+							var byteAsByte = (uint)byteV;
+
+							final = byteAsByte << 16 | byteAsByte << 8 | byteAsByte << 0;
+						}
 
 						var addr = pBase + y * (data.Stride / 4) + x;
 
-						*addr = byteAsByte << 16 | byteAsByte << 8 | byteAsByte << 0;
+						*addr = final;
 					}
 				}
 			}
