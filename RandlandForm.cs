@@ -83,6 +83,8 @@ public partial class RandlandForm : Form
 
 		Randland.AddMapForm( mapForm.panel1, e.Node );
 
+		mapForm.Text = $"{e.Node.Parent.Name} .:. {e.Node.Name}";
+
 		mapForm.Show( this );
 	}
 }
