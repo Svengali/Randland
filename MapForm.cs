@@ -26,8 +26,7 @@ public partial class MapForm : Form, IMapView
 
 		panel1.Size = new Size( 2048, 1024 );
 
-
-		Refresh();
+		Invalidate();
 	}
 
 
@@ -43,7 +42,7 @@ public partial class MapForm : Form, IMapView
 
 		panel1.FillinBitmap( _map.Layer );
 
-		Refresh();
+		Invalidate();
 	}
 
 	private void propertyGrid1_Click( object sender, EventArgs e )
@@ -56,7 +55,7 @@ public partial class MapForm : Form, IMapView
 	{
 		panel1.FillinBitmap( _map.Layer );
 
-		Refresh();
+		Invalidate();
 	}
 
 	private void mapToolStripMenuItem_Click( object sender, EventArgs e )
@@ -111,7 +110,7 @@ public partial class MapForm : Form, IMapView
 
 		_grid.SelectedObject = _map.Layer;
 
-		Refresh();
+		Invalidate();
 
 	}
 
