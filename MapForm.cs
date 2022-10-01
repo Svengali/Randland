@@ -8,13 +8,82 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Forms.Design;
 
 namespace rl;
+
+public record MapInfo(MapLayer Layer, MapViewInfo ViewInfo);
+
+/*
+
+public class PropDesc : PropertyDescriptor
+{
+	public PropDesc( MemberDescriptor descr ) : base( descr )
+	{
+	}
+
+	public PropDesc( string name, Attribute[] attrs ) : base( name, attrs )
+	{
+	}
+
+	public PropDesc( MemberDescriptor descr, Attribute[] attrs ) : base( descr, attrs )
+	{
+	}
+
+	public override Type ComponentType => throw new NotImplementedException();
+
+	public override bool IsReadOnly => throw new NotImplementedException();
+
+	public override Type PropertyType => throw new NotImplementedException();
+
+	public override bool CanResetValue( object component )
+	{
+		throw new NotImplementedException();
+	}
+
+	public override object GetValue( object component )
+	{
+		throw new NotImplementedException();
+	}
+
+	public override void ResetValue( object component )
+	{
+		throw new NotImplementedException();
+	}
+
+	public override void SetValue( object component, object value )
+	{
+		throw new NotImplementedException();
+	}
+
+	public override bool ShouldSerializeValue( object component )
+	{
+		throw new NotImplementedException();
+	}
+}
+
+public class LayerTab : PropertyTab
+{
+	public override string TabName { get; }
+
+	public override PropertyDescriptorCollection GetProperties( object component, Attribute[] attributes )
+	{
+		return _props;
+	}
+
+	PropertyDescriptorCollection _props = new(new [] { new PropDesc() });
+}
+
+*/
 
 public partial class MapForm : Form, IMapView
 {
 	Map _map = new Map( new MapLayer( (v) => 0.5f, 1.0f, 1.0f, 1.0f,  1.0f, 1.0f, 0.5f ) );
 
+
+	public MapForm() : this( new Map( new MapLayer( ( v ) => 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.5f ) ) )
+	{
+	}
 
 	public MapForm( Map map )
 	{
@@ -22,7 +91,11 @@ public partial class MapForm : Form, IMapView
 
 		InitializeComponent();
 
+		//_grid.PropertyTabs.AddTabType( typeof( PropertyTab ), PropertyTabScope.Global );
+		//_grid.PropertyTabs.AddTabType( typeof( PropertyTab ), PropertyTabScope.Global );
+
 		_grid.SelectedObject = _map.Layer;
+		//_grid.SelectedObjects = new[] { (object)_map.Layer, (object)panel1._viewInfo };
 
 		panel1.Size = new Size( 2048, 1024 );
 
@@ -40,8 +113,6 @@ public partial class MapForm : Form, IMapView
 	{
 		//findBestValuesToolStripMenuItem_Click( null, null );
 
-		panel1.FillinBitmap( _map.Layer );
-
 		Invalidate();
 	}
 
@@ -53,9 +124,11 @@ public partial class MapForm : Form, IMapView
 
 	private void _grid_PropertyValueChanged( object s, PropertyValueChangedEventArgs e )
 	{
-		panel1.FillinBitmap( _map.Layer );
+		panel1._map = _map;
 
-		Invalidate();
+		panel1.DoUpdate( _map.Layer.Fn );
+
+		panel1.Invalidate();
 	}
 
 	private void mapToolStripMenuItem_Click( object sender, EventArgs e )
@@ -109,6 +182,8 @@ public partial class MapForm : Form, IMapView
 		_map = _map with { Layer = newLayer };
 
 		_grid.SelectedObject = _map.Layer;
+		//_grid.SelectedObjects = new[] { (object)_map.Layer, (object)panel1._viewInfo };
+
 
 		Invalidate();
 

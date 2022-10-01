@@ -30,11 +30,11 @@ public record Chunk(
 	//public Bitmap Overview = new Bitmap( 256, 256, PixelFormat.Format32bppRgb );
 	public Bitmap Detail   = new Bitmap( 256, 256, PixelFormat.Format32bppRgb );
 
-	public void GenerateDetail( MapControl mapControl )
+	public void GenerateDetail( MapControl mapControl2, MapViewInfo viewInfo )
 	{
 		var data = Detail.LockBits( new Rectangle( 0, 0, 256, 256 ), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb );
 
-		var startPos = PerlinPos;
+		var startPos = PerlinPos; // + new g3.Vector2f(viewInfo.transX, viewInfo.transY);
 
 		var size = new g3.Vector2f( Layer.scaleX, Layer.scaleY );
 
@@ -110,13 +110,15 @@ public partial class MapControl : UserControl, IMapView
 {
 	Bitmap _bmp = new Bitmap(2048, 1024);
 
-	Map _map;
+	public Map _map;
 
 	ConcurrentQueue<Chunk> _chunksNeeded = new();
 	ConcurrentDictionary<g3.Vector2i, Chunk> _chunks = new();
 
 	//Monitor _processChunks = new();
 	volatile bool _redo = false;
+
+	public MapViewInfo _viewInfo = new MapViewInfo( 0, 0, 0,  1, 1, 1 );
 
 	public MapControl( Map map )
 	{
@@ -172,72 +174,6 @@ public partial class MapControl : UserControl, IMapView
 		//FillinBitmap( _map.Layer );
 	}
 
-	public void FillinBitmap( MapLayer layer )
-	{
-		return; 
-
-		_bmp = new Bitmap( 2048, 1024, PixelFormat.Format32bppRgb );
-
-		// @@@ TODO :: Replace this with shared code from the 
-
-		var data = _bmp.LockBits( new Rectangle( 0, 0, 2048, 1024 ), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb );
-
-		var startPos = new g3.Vector2f( layer.transX, layer.transY );
-
-		var size = new g3.Vector2f( layer.scaleX, layer.scaleY );
-
-		var step = new g3.Vector2f( 1.0f / 255.0f ) * size;
-
-		try
-		{
-			unsafe
-			{
-				uint* pBase = (uint*)data.Scan0.ToPointer();
-
-				for( int y = 0; y < 1024; y+= 4 )
-				{
-					var yF = (float)y;
-
-					var perlinY = startPos.y + yF * step.y;
-
-					for( int x = 0; x < 2048; x+= 4 )
-					{
-						var xF = (float)x;
-
-						var perlinX = startPos.x + xF * step.x;
-
-						var perlin = new g3.Vector2f( perlinX, perlinY );
-
-						//var vPerlin = rl.Perlin.Fbm( perlin, ( p ) => 2, ( p ) => 0.5f, ( p ) => 4 );
-
-						var vPerlin = layer.Fn( perlin );
-
-						var vScaled = vPerlin * layer.scaleZ;
-
-						var vScaledMoved = vScaled + layer.transZ;
-
-						var vFull = vScaledMoved;
-
-						var v = Math.Max( 0.0f, Math.Min( vFull, 1.0f ) );
-
-
-						var byteV = v * 255.0f;
-
-						var byteAsByte = (uint)byteV;
-
-						var addr = pBase + y * (data.Stride / 4) + x;
-
-						*addr = byteAsByte << 16 | byteAsByte << 8 | byteAsByte << 0;
-					}
-				}
-			}
-		}
-		finally
-		{
-			_bmp.UnlockBits( data );
-		}
-	}
-
 	protected override void OnHandleCreated( EventArgs e )
 	{
 		base.OnHandleCreated( e );
@@ -258,7 +194,7 @@ public partial class MapControl : UserControl, IMapView
 					{
 						runningTasks.Add( Task.Run( () => {
 
-							chunk.GenerateDetail( this );
+							chunk.GenerateDetail( this, _viewInfo );
 
 							var chunkAdded = _chunks.TryAdd( chunk.Pos, chunk );
 
@@ -268,7 +204,9 @@ public partial class MapControl : UserControl, IMapView
 							}
 
 							this.Invoke( () => {
-								this.Invalidate();
+
+								Invalidate( new Rectangle( new Point( chunk.Pos.x, chunk.Pos.y ) , new Size(256, 256) ) );
+
 							} );
 
 						} ) );

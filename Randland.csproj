@@ -80,6 +80,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CompilerHack.cs" />
+    <Compile Include="controls\FunkyButton.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="controls\PointEditorControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="controls\PointsCollection.cs" />
+    <Compile Include="controls\PointsProp.cs" />
+    <Compile Include="controls\PointUIEditor.cs" />
     <Compile Include="MapControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -94,6 +103,7 @@
     </Compile>
     <Compile Include="map\Map.cs" />
     <Compile Include="Perlin.cs" />
+    <Compile Include="PropDescBase.cs" />
     <Compile Include="RandlandForm.cs">
       <SubType>Form</SubType>
     </Compile>
