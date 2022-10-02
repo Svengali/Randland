@@ -24,8 +24,8 @@ public record MapViewInfo(
 
 public record Chunk( 
 	MapLayer Layer, 
-	g3.Vector2f PerlinPos, 
-	g3.Vector2i Pos )
+	math.Vec2 PerlinPos, 
+	math.Int2 Pos )
 {
 	//public Bitmap Overview = new Bitmap( 256, 256, PixelFormat.Format32bppRgb );
 	public Bitmap Detail   = new Bitmap( 256, 256, PixelFormat.Format32bppRgb );
@@ -34,11 +34,11 @@ public record Chunk(
 	{
 		var data = Detail.LockBits( new Rectangle( 0, 0, 256, 256 ), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb );
 
-		var startPos = PerlinPos; // + new g3.Vector2f(viewInfo.transX, viewInfo.transY);
+		var startPos = PerlinPos; // + new math.Vec2(viewInfo.transX, viewInfo.transY);
 
-		var size = new g3.Vector2f( Layer.scaleX, Layer.scaleY );
+		var size = new math.Vec2( Layer.scaleX, Layer.scaleY );
 
-		var step = new g3.Vector2f( 1.0f / 255.0f ) * size;
+		var step = new math.Vec2( 1.0f / 255.0f ) * size;
 
 		try
 		{
@@ -50,15 +50,15 @@ public record Chunk(
 				{
 					var yF = (float)y;
 
-					var perlinY = startPos.y + yF * step.y;
+					var perlinY = startPos.Y + yF * step.Y;
 
 					for( int x = 0; x < 256; x += 1 )
 					{
 						var xF = (float)x;
 
-						var perlinX = startPos.x + xF * step.x;
+						var perlinX = startPos.X + xF * step.X;
 
-						var perlin = new g3.Vector2f( perlinX, perlinY );
+						var perlin = new math.Vec2( perlinX, perlinY );
 
 						//var vPerlin = rl.Perlin.Fbm( perlin, ( p ) => 2, ( p ) => 0.5f, ( p ) => 4 );
 
@@ -72,6 +72,9 @@ public record Chunk(
 
 						var v = Math.Max( 0.0f, Math.Min( vFull, 1.0f ) );
 
+						uint isSmallerThan0 = ((uint)(x+y)&0x03) * (vFull < 0.0f ? (uint)1 : (uint)0);
+						uint isLargerThan1  = ((uint)(x+y)&0x03) * (vFull > 1.0f ? (uint)1 : (uint)0);
+
 						//V [0..1]
 
 						uint final = 0x00;
@@ -80,7 +83,10 @@ public record Chunk(
 						{
 							var water = v * 2.0f;
 							var finalF = water * 255.0f;
-							final = (uint)finalF;
+
+							uint red = isSmallerThan0 * 0x0f0000;
+
+							final = (uint)finalF | red;
 						}
 						else
 						{
@@ -88,7 +94,9 @@ public record Chunk(
 
 							var byteAsByte = (uint)byteV;
 
-							final = byteAsByte << 16 | byteAsByte << 8 | byteAsByte << 0;
+							uint red = isLargerThan1 * 0x0f;
+
+							final = byteAsByte << 16 | (byteAsByte - red) << 8 | (byteAsByte - red) << 0 | red;
 						}
 
 						var addr = pBase + y * (data.Stride / 4) + x;
@@ -113,7 +121,7 @@ public partial class MapControl : UserControl, IMapView
 	public Map _map;
 
 	ConcurrentQueue<Chunk> _chunksNeeded = new();
-	ConcurrentDictionary<g3.Vector2i, Chunk> _chunks = new();
+	ConcurrentDictionary<math.Int2, Chunk> _chunks = new();
 
 	//Monitor _processChunks = new();
 	volatile bool _redo = false;
@@ -141,17 +149,17 @@ public partial class MapControl : UserControl, IMapView
 		_map = map;
 	}
 
-	public void DoUpdate( Func<g3.Vector2f, float> Fn )
+	public void DoUpdate( Func<math.Vec2, float> Fn )
 	{
 		_map = _map with { Layer = _map.Layer with { Fn = Fn } };
 
 		_redo = true;
 
-		var startPos = new g3.Vector2f( _map.Layer.transX, _map.Layer.transY );
+		var startPos = new math.Vec2( _map.Layer.transX, _map.Layer.transY );
 
-		var size = new g3.Vector2f( _map.Layer.scaleX, _map.Layer.scaleY );
+		var size = new math.Vec2( _map.Layer.scaleX, _map.Layer.scaleY );
 
-		var step = new g3.Vector2f( 1.0f / 255.0f ) * size;
+		var step = new math.Vec2( 1.0f / 255.0f ) * size;
 
 
 		Monitor.Enter( this );
@@ -165,17 +173,17 @@ public partial class MapControl : UserControl, IMapView
 		{
 			float fY = (float)y;
 
-			var perlinY = startPos.y + fY * step.y;
+			var perlinY = startPos.Y + fY * step.Y;
 
 			for( int x = 0; x < Map.Max.X; x += 256 )
 			{
 				var fX = (float)x;
 
-				var perlinX = startPos.x + fX * step.x;
+				var perlinX = startPos.X + fX * step.X;
 
-				var perlin = new g3.Vector2f( perlinX, perlinY );
+				var perlin = new math.Vec2( perlinX, perlinY );
 
-				var chunk = new Chunk( _map.Layer, perlin, new g3.Vector2i( x, y ) );
+				var chunk = new Chunk( _map.Layer, perlin, new math.Int2( x, y ) );
 
 				_chunksNeeded.Enqueue( chunk );
 			}
@@ -217,7 +225,7 @@ public partial class MapControl : UserControl, IMapView
 
 							this.Invoke( () => {
 
-								Invalidate( new Rectangle( new Point( chunk.Pos.x, chunk.Pos.y ) , new Size(256, 256) ) );
+								Invalidate( new Rectangle( new Point( chunk.Pos.X, chunk.Pos.Y ) , new Size(256, 256) ) );
 
 							} );
 
@@ -257,17 +265,29 @@ public partial class MapControl : UserControl, IMapView
 	{
 		//e.Graphics.DrawImageUnscaled( _bmp, 0, 0 );
 
-		for( int y = 0; y < Map.Max.Y; y += 256 )
+		var chunkStartX = ((-_worldOrigin.X + e.ClipRectangle.Location.X) >> 8);
+		var chunkStartY = ((-_worldOrigin.Y + e.ClipRectangle.Location.Y) >> 8);
+
+		var chunkEndX = chunkStartX + ((e.ClipRectangle.Width + 255) >> 8);
+		var chunkEndY = chunkStartY + ((e.ClipRectangle.Height + 255) >> 8);
+
+		log.debug( $"Chunk ({chunkStartX}, {chunkStartY})x({chunkEndX}, {chunkEndY}) _worldOrigin({_worldOrigin.X}, {_worldOrigin.Y}) Rect({e.ClipRectangle.ToString()})" );
+
+		for( int y = chunkStartY * 256; y <= chunkEndY * 256; y += 256 )
 		{
-			for( int x = 0; x < Map.Max.X; x += 256 )
+			for( int x = chunkStartX * 256; x <= chunkEndX * 256; x += 256 )
 			{
-				var p = new g3.Vector2i( x, y );
+				var p = new math.Int2( x, y );
+
+				log.debug( $"Chunk ({p})" );
 
 				var gotChunk = _chunks.TryGetValue( p, out Chunk chunk );
 				if( gotChunk )
 				{
 					var origX = x + _worldOrigin.X;
 					var origY = y + _worldOrigin.Y;
+
+					log.debug( $"Draw ({origX}, {origY})" );
 
 					e.Graphics.DrawImageUnscaled( chunk.Detail, origX, origY );
 				}
@@ -281,14 +301,19 @@ public partial class MapControl : UserControl, IMapView
 	{
 		//e.Graphics.DrawImageUnscaledAndClipped
 
-		base.OnPaintBackground( e );
+		//base.OnPaintBackground( e );
 	}
+
+	public Action<string> FnChangeStatus = (str) => { };
+
+	public string _status = "Left Click to see height information";
 
 	private void MapControl_MouseClick( object sender, MouseEventArgs e )
 	{
+		if( e.Button != MouseButtons.Left ) return;
 
 
-
+		//var chunk = new Chunk( _map.Layer, perlin, new math.Int2( x, y ) );
 	}
 
 	private void MapControl_Load( object sender, EventArgs e )
@@ -302,7 +327,7 @@ public partial class MapControl : UserControl, IMapView
 
 	private void MapControl_MouseDown( object sender, MouseEventArgs e )
 	{
-		if( e.Button == MouseButtons.Left ) 
+		if( e.Button == MouseButtons.Middle ) 
 		{
 			_draggingWorld = true;
 			_mouseStart = e.Location;
@@ -322,11 +347,38 @@ public partial class MapControl : UserControl, IMapView
 
 			Invalidate();
 		}
+
+		var worldX = -_worldOrigin.X + e.Location.X;
+		var worldY = -_worldOrigin.Y + e.Location.Y;
+
+		var startPos = new math.Vec2( _map.Layer.transX, _map.Layer.transY );
+
+		var size = new math.Vec2( _map.Layer.scaleX, _map.Layer.scaleY );
+
+		var step = new math.Vec2( 1.0f / 255.0f ) * size;
+
+
+		float fY = (float)worldY;
+
+		var perlinY = startPos.Y + fY * step.Y;
+
+		var fX = (float)worldX;
+
+		var perlinX = startPos.X + fX * step.X;
+
+		var perlin = new math.Vec2( perlinX, perlinY );
+
+		var height = _map.Layer.Fn( perlin );
+
+		_status = $"World Pixel({worldX}, {worldY}) Perlin({perlin.X:F3}, {perlin.Y:F3}), Height({height:F3})";
+
+		FnChangeStatus( _status );
+
 	}
 
 	private void MapControl_MouseUp( object sender, MouseEventArgs e )
 	{
-		if( e.Button == MouseButtons.Left ) _draggingWorld = false;
+		if( e.Button == MouseButtons.Middle ) _draggingWorld = false;
 	}
 
 	private void MapControl_KeyDown( object sender, KeyEventArgs e )
@@ -337,5 +389,10 @@ public partial class MapControl : UserControl, IMapView
 	private void MapControl_KeyUp( object sender, KeyEventArgs e )
 	{
 
+	}
+
+	internal void ResetOrigin()
+	{
+		_worldOrigin = new Point( 0, 0 );
 	}
 }

@@ -10,11 +10,11 @@ namespace rl;
 public interface IMapView
 {
 
-	void DoUpdate( Func<g3.Vector2f, float> Fn );
+	void DoUpdate( Func<math.Vec2, float> Fn );
 }
 
 public record MapLayer( 
-	Func<g3.Vector2f, float> Fn,
+	Func<math.Vec2, float> Fn,
 	float transX, float transY, float transZ, 
 	float scaleX, float scaleY, float scaleZ,
 	float octaves = 6

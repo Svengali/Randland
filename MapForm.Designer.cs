@@ -32,9 +32,13 @@
 			this.menuStrip1 = new System.Windows.Forms.MenuStrip();
 			this.mapToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.findBestValuesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.resetWorldOriginToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this._status = new System.Windows.Forms.StatusStrip();
+			this._statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+			this._statusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
 			this._mapControl = new MapControl();
 			this.menuStrip1.SuspendLayout();
+			this._status.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// _grid
@@ -60,7 +64,8 @@
 			// mapToolStripMenuItem
 			// 
 			this.mapToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.findBestValuesToolStripMenuItem});
+            this.findBestValuesToolStripMenuItem,
+            this.resetWorldOriginToolStripMenuItem});
 			this.mapToolStripMenuItem.Name = "mapToolStripMenuItem";
 			this.mapToolStripMenuItem.Size = new System.Drawing.Size(43, 20);
 			this.mapToolStripMenuItem.Text = "Map";
@@ -69,22 +74,44 @@
 			// findBestValuesToolStripMenuItem
 			// 
 			this.findBestValuesToolStripMenuItem.Name = "findBestValuesToolStripMenuItem";
-			this.findBestValuesToolStripMenuItem.Size = new System.Drawing.Size(158, 22);
+			this.findBestValuesToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
 			this.findBestValuesToolStripMenuItem.Text = "Find Best Values";
 			this.findBestValuesToolStripMenuItem.Click += new System.EventHandler(this.findBestValuesToolStripMenuItem_Click);
 			// 
+			// resetWorldOriginToolStripMenuItem
+			// 
+			this.resetWorldOriginToolStripMenuItem.Name = "resetWorldOriginToolStripMenuItem";
+			this.resetWorldOriginToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
+			this.resetWorldOriginToolStripMenuItem.Text = "Reset World Origin";
+			this.resetWorldOriginToolStripMenuItem.Click += new System.EventHandler(this.resetWorldOriginToolStripMenuItem_Click);
+			// 
 			// _status
 			// 
+			this._status.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this._statusLabel,
+            this._statusLabel2});
 			this._status.Location = new System.Drawing.Point(0, 530);
 			this._status.Name = "_status";
 			this._status.Size = new System.Drawing.Size(974, 22);
 			this._status.TabIndex = 3;
 			this._status.Text = "Status";
+			this._status.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this._status_ItemClicked);
+			// 
+			// _statusLabel
+			// 
+			this._statusLabel.Name = "_statusLabel";
+			this._statusLabel.Size = new System.Drawing.Size(27, 17);
+			this._statusLabel.Text = "Test";
+			// 
+			// _statusLabel2
+			// 
+			this._statusLabel2.Name = "_statusLabel2";
+			this._statusLabel2.Size = new System.Drawing.Size(77, 17);
+			this._statusLabel2.Text = "_statusLabel2";
+			this._statusLabel2.Click += new System.EventHandler(this.toolStripStatusLabel2_Click);
 			// 
 			// _mapControl
 			// 
-			this._mapControl.AutoScroll = true;
-			this._mapControl.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 			this._mapControl.Dock = System.Windows.Forms.DockStyle.Fill;
 			this._mapControl.Location = new System.Drawing.Point(0, 24);
 			this._mapControl.Name = "_mapControl";
@@ -104,8 +131,11 @@
 			this.MainMenuStrip = this.menuStrip1;
 			this.Name = "MapForm";
 			this.Text = "MapForm";
+			this.Load += new System.EventHandler(this.MapForm_Load);
 			this.menuStrip1.ResumeLayout(false);
 			this.menuStrip1.PerformLayout();
+			this._status.ResumeLayout(false);
+			this._status.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -118,6 +148,9 @@
 		private System.Windows.Forms.ToolStripMenuItem mapToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem findBestValuesToolStripMenuItem;
 		private System.Windows.Forms.StatusStrip _status;
-		public MapControl _mapControl;
+		private System.Windows.Forms.ToolStripMenuItem resetWorldOriginToolStripMenuItem;
+		private System.Windows.Forms.ToolStripStatusLabel _statusLabel;
+		private System.Windows.Forms.ToolStripStatusLabel _statusLabel2;
+		private MapControl _mapControl;
 	}
 }

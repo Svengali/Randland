@@ -18,41 +18,41 @@ namespace rl
 			return Lerp( u, Grad( perm[X], x ), Grad( perm[X + 1], x - 1 ) ) * 2;
 		}
 
-		public static float Noise( g3.Vector2f pos )
+		public static float Noise( math.Vec2 pos )
 		{
-			var X = (int)Math.Floor(pos.x) & 0xff;
-			var Y = (int)Math.Floor(pos.y) & 0xff;
-			pos.x -= (float)Math.Floor( pos.x );
-			pos.y -= (float)Math.Floor( pos.y );
-			var u = Fade(pos.x);
-			var v = Fade(pos.y);
+			var X = (int)Math.Floor(pos.X) & 0xff;
+			var Y = (int)Math.Floor(pos.Y) & 0xff;
+			pos.X -= (float)Math.Floor( pos.X );
+			pos.Y -= (float)Math.Floor( pos.Y );
+			var u = Fade(pos.X);
+			var v = Fade(pos.Y);
 			var A = (perm[X  ] + Y) & 0xff;
 			var B = (perm[X+1] + Y) & 0xff;
-			return Lerp( v, Lerp( u, Grad( perm[A], pos.x, pos.y ), Grad( perm[B], pos.x - 1, pos.y ) ),
-										 Lerp( u, Grad( perm[A + 1], pos.x, pos.y - 1 ), Grad( perm[B + 1], pos.x - 1, pos.y - 1 ) ) );
+			return Lerp( v, Lerp( u, Grad( perm[A], pos.X, pos.Y ), Grad( perm[B], pos.X - 1, pos.Y ) ),
+										 Lerp( u, Grad( perm[A + 1], pos.X, pos.Y - 1 ), Grad( perm[B + 1], pos.X - 1, pos.Y - 1 ) ) );
 		}
 
-		public static float Noise( g3.Vector3f pos )
+		public static float Noise( math.Vec3 pos )
 		{
-			var X = (int)Math.Floor(pos.x) & 0xff;
-			var Y = (int)Math.Floor(pos.y) & 0xff;
-			var Z = (int)Math.Floor(pos.z) & 0xff;
-			pos.x -= (float)Math.Floor( pos.x );
-			pos.y -= (float)Math.Floor( pos.y );
-			pos.z -= (float)Math.Floor( pos.z );
-			var u = Fade(pos.x);
-			var v = Fade(pos.y);
-			var w = Fade(pos.z);
+			var X = (int)Math.Floor(pos.X) & 0xff;
+			var Y = (int)Math.Floor(pos.Y) & 0xff;
+			var Z = (int)Math.Floor(pos.Z) & 0xff;
+			pos.X -= (float)Math.Floor( pos.X );
+			pos.Y -= (float)Math.Floor( pos.Y );
+			pos.Z -= (float)Math.Floor( pos.Z );
+			var u = Fade(pos.X);
+			var v = Fade(pos.Y);
+			var w = Fade(pos.Z);
 			var A  = (perm[X+0] + Y) & 0xff;
 			var B  = (perm[X+1] + Y) & 0xff;
 			var AA = (perm[A+0] + Z) & 0xff;
 			var BA = (perm[B+0] + Z) & 0xff;
 			var AB = (perm[A+1] + Z) & 0xff;
 			var BB = (perm[B+1] + Z) & 0xff;
-			return Lerp( w, Lerp( v, Lerp( u, Grad( perm[AA], pos.x, pos.y, pos.z ), Grad( perm[BA], pos.x - 1, pos.y, pos.z ) ),
-														 Lerp( u, Grad( perm[AB], pos.x, pos.y - 1, pos.z ), Grad( perm[BB], pos.x - 1, pos.y - 1, pos.z ) ) ),
-										 Lerp( v, Lerp( u, Grad( perm[AA + 1], pos.x, pos.y, pos.z - 1 ), Grad( perm[BA + 1], pos.x - 1, pos.y, pos.z - 1 ) ),
-														 Lerp( u, Grad( perm[AB + 1], pos.x, pos.y - 1, pos.z - 1 ), Grad( perm[BB + 1], pos.x - 1, pos.y - 1, pos.z - 1 ) ) ) );
+			return Lerp( w, Lerp( v, Lerp( u, Grad( perm[AA], pos.X, pos.Y, pos.Z ), Grad( perm[BA], pos.X - 1, pos.Y, pos.Z ) ),
+														 Lerp( u, Grad( perm[AB], pos.X, pos.Y - 1, pos.Z ), Grad( perm[BB], pos.X - 1, pos.Y - 1, pos.Z ) ) ),
+										 Lerp( v, Lerp( u, Grad( perm[AA + 1], pos.X, pos.Y, pos.Z - 1 ), Grad( perm[BA + 1], pos.X - 1, pos.Y, pos.Z - 1 ) ),
+														 Lerp( u, Grad( perm[AB + 1], pos.X, pos.Y - 1, pos.Z - 1 ), Grad( perm[BB + 1], pos.X - 1, pos.Y - 1, pos.Z - 1 ) ) ) );
 		}
 
 		#endregion
@@ -88,7 +88,7 @@ namespace rl
 			return f;
 		}
 
-		public static float Fbm( g3.Vector3f pos, Func<g3.Vector3f, float> fnMult, Func<g3.Vector3f, float> fnWeight, Func<g3.Vector3f, float> fnOctave )
+		public static float Fbm( math.Vec3 pos, Func<math.Vec3, float> fnMult, Func<math.Vec3, float> fnWeight, Func<math.Vec3, float> fnOctave )
 		{
 			var f = 0.0f;
 			var w = 0.5f;
@@ -118,7 +118,7 @@ namespace rl
 		}
 
 
-		public static float Fbm( g3.Vector2f pos, Func<g3.Vector2f, float> fnMult, Func<g3.Vector2f, float> fnWeight, Func<g3.Vector2f, float> fnOctave )
+		public static float Fbm( math.Vec2 pos, Func<math.Vec2, float> fnMult, Func<math.Vec2, float> fnWeight, Func<math.Vec2, float> fnOctave )
 		{
 			var f = 0.0f;
 			var w = 0.5f;

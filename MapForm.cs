@@ -80,6 +80,11 @@ public partial class MapForm : Form, IMapView
 {
 	Map _map = new Map( new MapLayer( (v) => 0.5f, 1.0f, 1.0f, 1.0f,  1.0f, 1.0f, 0.5f ) );
 
+	//Custom Control
+	//public MapControl _mapControl;
+
+	public MapControl MapControl => _mapControl;
+
 
 
 	public MapForm() : this( new Map( new MapLayer( ( v ) => 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.5f ) ) )
@@ -90,7 +95,22 @@ public partial class MapForm : Form, IMapView
 	{
 		_map = map;
 
+		/*
+		_mapControl = new MapControl();
+
+		_mapControl.Dock = System.Windows.Forms.DockStyle.Fill;
+		_mapControl.Location = new System.Drawing.Point( 0, 24 );
+		_mapControl.Name = "_mapControl";
+		_mapControl.Size = new System.Drawing.Size( 804, 506 );
+		_mapControl.TabIndex = 4;
+		*/
+
+
 		InitializeComponent();
+
+		MapControl.FnChangeStatus = (str) => {
+			_statusLabel.Text = str;
+		};
 
 		_mapControl._map = _map;
 
@@ -105,8 +125,7 @@ public partial class MapForm : Form, IMapView
 		Invalidate();
 	}
 
-
-	public void DoUpdate( Func<g3.Vector2f, float> Fn )
+	public void DoUpdate( Func<math.Vec2, float> Fn )
 	{
 		_map = _map with { Layer = _map.Layer with { Fn = Fn } };
 		_mapControl.DoUpdate( Fn );
@@ -142,11 +161,11 @@ public partial class MapForm : Form, IMapView
 	private void findBestValuesToolStripMenuItem_Click( object sender, EventArgs e )
 	{
 		// @@@ TODO :: Replace this with shared code from the 
-		var startPos = new g3.Vector2f( _map.Layer.transX, _map.Layer.transY );
+		var startPos = new math.Vec2( _map.Layer.transX, _map.Layer.transY );
 
-		var size = new g3.Vector2f( _map.Layer.scaleX, _map.Layer.scaleY );
+		var size = new math.Vec2( _map.Layer.scaleX, _map.Layer.scaleY );
 
-		var step = new g3.Vector2f( 1.0f / 255.0f ) * size;
+		var step = new math.Vec2( 1.0f / 255.0f ) * size;
 
 		var smallestV = float.MaxValue;
 		var largestV  = float.MinValue;
@@ -155,15 +174,15 @@ public partial class MapForm : Form, IMapView
 		{
 			var yF = (float)y;
 
-			var perlinY = startPos.y + yF * step.y;
+			var perlinY = startPos.Y + yF * step.Y;
 
 			for( int x = 0; x < Map.Max.X; x+= 32 )
 			{
 				var xF = (float)x;
 
-				var perlinX = startPos.x + xF * step.x;
+				var perlinX = startPos.X + xF * step.X;
 
-				var perlin = new g3.Vector2f( perlinX, perlinY );
+				var perlin = new math.Vec2( perlinX, perlinY );
 
 				var vPerlin = _map.Layer.Fn( perlin );
 
@@ -192,4 +211,29 @@ public partial class MapForm : Form, IMapView
 
 	}
 
+	private void resetWorldOriginToolStripMenuItem_Click( object sender, EventArgs e )
+	{
+		_mapControl.ResetOrigin();
+		Invalidate();
+	}
+
+	private void MapForm_Load( object sender, EventArgs e )
+	{
+
+	}
+
+	private void toolStripSplitButton1_ButtonClick( object sender, EventArgs e )
+	{
+
+	}
+
+	private void toolStripStatusLabel2_Click( object sender, EventArgs e )
+	{
+
+	}
+
+	private void _status_ItemClicked( object sender, ToolStripItemClickedEventArgs e )
+	{
+
+	}
 }

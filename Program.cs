@@ -12,7 +12,7 @@ using System.Windows.Forms;
 namespace rl;
 
 //*
-public record MapExp( string Category, string Name, Func<g3.Vector2f, float> Fn, ImmutableList<IMapView> Views )
+public record MapExp( string Category, string Name, Func<math.Vec2, float> Fn, ImmutableList<IMapView> Views )
 {
 
 	public MapExp AddView( IMapView view )
@@ -33,7 +33,7 @@ public record MapExp( string Name, Map Map, ImmutableList<IMapView> Views )
 
 public record WorldFns( string Category, ImmutableList<MapExp> MapExp )
 {
-	public WorldFns AddOrUpdate( string name, Func<g3.Vector2f, float> fn /*, ImmutableList<Map> instances*/ )
+	public WorldFns AddOrUpdate( string name, Func<math.Vec2, float> fn /*, ImmutableList<Map> instances*/ )
 	{
 		var oldMap = MapExp.Find( (old) => old.Name == name );
 
@@ -123,7 +123,7 @@ internal static class Randland
 		log.high( $"Starting up in {Directory.GetCurrentDirectory()}" );
 
 		//Load the geometry dll
-		var pos = new g3.Vector3f();
+		var pos = new math.Vec3();
 		var v = rl.Perlin.Noise( 0.0f );
 
 
@@ -160,13 +160,13 @@ internal static class Randland
 
 					if( fn.GetParameters().Length != 1 ) continue;
 
-					if( fn.GetParameters()[0].ParameterType != typeof( g3.Vector2f ) ) continue;
+					if( fn.GetParameters()[0].ParameterType != typeof( math.Vec2 ) ) continue;
 
 					if( fn.ReturnType != typeof( float ) ) continue;
 
-					var newFn = fn.CreateDelegate( typeof( Func<g3.Vector2f, float> ) );
+					var newFn = fn.CreateDelegate( typeof( Func<math.Vec2, float> ) );
 
-					Func<g3.Vector2f, float> fnBare = (Func<g3.Vector2f, float>)newFn;
+					Func<math.Vec2, float> fnBare = (Func<math.Vec2, float>)newFn;
 
 					worldFns = worldFns.AddOrUpdate( fn.Name, fnBare );
 

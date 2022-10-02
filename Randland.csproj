@@ -156,10 +156,6 @@
       <Project>{212a359e-9b67-4212-8fd7-95922f0ee2f6}</Project>
       <Name>FluentResults</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\MathLibs\geometry3Sharp\geometry3Sharp_netstandard.csproj">
-      <Project>{fa74ab35-b297-466f-b20c-a02a85e32449}</Project>
-      <Name>geometry3Sharp_netstandard</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.8">
