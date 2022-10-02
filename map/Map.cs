@@ -9,6 +9,7 @@ namespace rl;
 
 public interface IMapView
 {
+
 	void DoUpdate( Func<g3.Vector2f, float> Fn );
 }
 
@@ -27,6 +28,9 @@ public record MapLayer(
 
 public record Map( MapLayer Layer )
 {
+	public static math.Point Max = new( 8192, 4096 );
+
+
 }
 
 /*

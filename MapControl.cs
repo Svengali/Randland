@@ -108,7 +108,7 @@ public record Chunk(
 
 public partial class MapControl : UserControl, IMapView
 {
-	Bitmap _bmp = new Bitmap(2048, 1024);
+	Bitmap _bmp = new Bitmap(Map.Max.X, Map.Max.Y);
 
 	public Map _map;
 
@@ -120,11 +120,23 @@ public partial class MapControl : UserControl, IMapView
 
 	public MapViewInfo _viewInfo = new MapViewInfo( 0, 0, 0,  1, 1, 1 );
 
+	public MapControl()
+	{
+		InitializeComponent();
+
+		Size = new Size( Map.Max.X, Map.Max.Y );
+
+		AutoScroll = true;
+	}
+
 	public MapControl( Map map )
 	{
 		InitializeComponent();
 
 		//SetStyle( ControlStyles.Opaque, true );
+
+		Size = new Size( Map.Max.X, Map.Max.Y );
+		AutoScroll = true;
 
 		_map = map;
 	}
@@ -149,13 +161,13 @@ public partial class MapControl : UserControl, IMapView
 		_chunks.Clear();
 
 		// @@@ TODO: Configify this
-		for( int y = 0; y < 1024; y += 256 )
+		for( int y = 0; y < Map.Max.Y; y += 256 )
 		{
 			float fY = (float)y;
 
 			var perlinY = startPos.y + fY * step.y;
 
-			for( int x = 0; x < 2048; x += 256 )
+			for( int x = 0; x < Map.Max.X; x += 256 )
 			{
 				var fX = (float)x;
 
@@ -239,20 +251,25 @@ public partial class MapControl : UserControl, IMapView
 		base.OnHandleDestroyed( e );
 	}
 
+	private Point _worldOrigin = Point.Empty;
+
 	protected override void OnPaint( PaintEventArgs e )
 	{
 		//e.Graphics.DrawImageUnscaled( _bmp, 0, 0 );
 
-		for( int y = 0; y < 1024; y += 256 )
+		for( int y = 0; y < Map.Max.Y; y += 256 )
 		{
-			for( int x = 0; x < 2048; x += 256 )
+			for( int x = 0; x < Map.Max.X; x += 256 )
 			{
 				var p = new g3.Vector2i( x, y );
 
 				var gotChunk = _chunks.TryGetValue( p, out Chunk chunk );
 				if( gotChunk )
 				{
-					e.Graphics.DrawImageUnscaled( chunk.Detail, x, y );
+					var origX = x + _worldOrigin.X;
+					var origY = y + _worldOrigin.Y;
+
+					e.Graphics.DrawImageUnscaled( chunk.Detail, origX, origY );
 				}
 			}
 		}
@@ -265,5 +282,60 @@ public partial class MapControl : UserControl, IMapView
 		//e.Graphics.DrawImageUnscaledAndClipped
 
 		base.OnPaintBackground( e );
+	}
+
+	private void MapControl_MouseClick( object sender, MouseEventArgs e )
+	{
+
+
+
+	}
+
+	private void MapControl_Load( object sender, EventArgs e )
+	{
+
+	}
+
+	bool _draggingWorld = false;
+	Point _mouseStart;
+
+
+	private void MapControl_MouseDown( object sender, MouseEventArgs e )
+	{
+		if( e.Button == MouseButtons.Left ) 
+		{
+			_draggingWorld = true;
+			_mouseStart = e.Location;
+		}
+	}
+
+	private void MapControl_MouseMove( object sender, MouseEventArgs e )
+	{
+		if( _draggingWorld )
+		{
+			var mouseDeltaX = e.Location.X - _mouseStart.X;
+			var mouseDeltaY = e.Location.Y - _mouseStart.Y;
+
+			_worldOrigin = new Point( _worldOrigin.X + mouseDeltaX, _worldOrigin.Y + mouseDeltaY );
+
+			_mouseStart = e.Location;
+
+			Invalidate();
+		}
+	}
+
+	private void MapControl_MouseUp( object sender, MouseEventArgs e )
+	{
+		if( e.Button == MouseButtons.Left ) _draggingWorld = false;
+	}
+
+	private void MapControl_KeyDown( object sender, KeyEventArgs e )
+	{
+
+	}
+
+	private void MapControl_KeyUp( object sender, KeyEventArgs e )
+	{
+
 	}
 }

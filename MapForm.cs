@@ -81,6 +81,7 @@ public partial class MapForm : Form, IMapView
 	Map _map = new Map( new MapLayer( (v) => 0.5f, 1.0f, 1.0f, 1.0f,  1.0f, 1.0f, 0.5f ) );
 
 
+
 	public MapForm() : this( new Map( new MapLayer( ( v ) => 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.5f ) ) )
 	{
 	}
@@ -91,13 +92,15 @@ public partial class MapForm : Form, IMapView
 
 		InitializeComponent();
 
+		_mapControl._map = _map;
+
 		//_grid.PropertyTabs.AddTabType( typeof( PropertyTab ), PropertyTabScope.Global );
 		//_grid.PropertyTabs.AddTabType( typeof( PropertyTab ), PropertyTabScope.Global );
 
 		_grid.SelectedObject = _map.Layer;
-		//_grid.SelectedObjects = new[] { (object)_map.Layer, (object)panel1._viewInfo };
+		//_grid.SelectedObjects = new[] { (object)_map.Layer, (object)_mapControl._viewInfo };
 
-		panel1.Size = new Size( 2048, 1024 );
+		_mapControl.Size = new Size( Map.Max.X, Map.Max.Y );
 
 		Invalidate();
 	}
@@ -106,7 +109,7 @@ public partial class MapForm : Form, IMapView
 	public void DoUpdate( Func<g3.Vector2f, float> Fn )
 	{
 		_map = _map with { Layer = _map.Layer with { Fn = Fn } };
-		panel1.DoUpdate( Fn );
+		_mapControl.DoUpdate( Fn );
 	}
 
 	private void panel1_Load( object sender, EventArgs e )
@@ -124,11 +127,11 @@ public partial class MapForm : Form, IMapView
 
 	private void _grid_PropertyValueChanged( object s, PropertyValueChangedEventArgs e )
 	{
-		panel1._map = _map;
+		_mapControl._map = _map;
 
-		panel1.DoUpdate( _map.Layer.Fn );
+		_mapControl.DoUpdate( _map.Layer.Fn );
 
-		panel1.Invalidate();
+		_mapControl.Invalidate();
 	}
 
 	private void mapToolStripMenuItem_Click( object sender, EventArgs e )
@@ -148,13 +151,13 @@ public partial class MapForm : Form, IMapView
 		var smallestV = float.MaxValue;
 		var largestV  = float.MinValue;
 
-		for( int y = 0; y < 1024; y += 32 )
+		for( int y = 0; y < Map.Max.Y; y += 32 )
 		{
 			var yF = (float)y;
 
 			var perlinY = startPos.y + yF * step.y;
 
-			for( int x = 0; x < 2048; x+= 32 )
+			for( int x = 0; x < Map.Max.X; x+= 32 )
 			{
 				var xF = (float)x;
 
@@ -182,7 +185,7 @@ public partial class MapForm : Form, IMapView
 		_map = _map with { Layer = newLayer };
 
 		_grid.SelectedObject = _map.Layer;
-		//_grid.SelectedObjects = new[] { (object)_map.Layer, (object)panel1._viewInfo };
+		//_grid.SelectedObjects = new[] { (object)_map.Layer, (object)_mapControl._viewInfo };
 
 
 		Invalidate();
