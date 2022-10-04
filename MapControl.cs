@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using System.Drawing.Imaging;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Collections;
 
 namespace rl; 
 
@@ -70,29 +71,40 @@ public record Chunk(
 
 						var vFull = vScaledMoved;
 
-						var v = Math.Max( 0.0f, Math.Min( vFull, 1.0f ) );
+						var h = Math.Max( 0.0f, Math.Min( vFull, 1.0f ) );
 
-						uint isSmallerThan0 = ((uint)(x+y)&0x03) * (vFull < 0.0f ? (uint)1 : (uint)0);
-						uint isLargerThan1  = ((uint)(x+y)&0x03) * (vFull > 1.0f ? (uint)1 : (uint)0);
+						uint checker = (((uint)x>>2) + ((uint)y>>2))&0x01;
+
+						uint isSmallerThan0 = checker * (vFull < 0.0f ? (uint)1 : (uint)0);
+						uint isLargerThan1  = checker * (vFull > 1.0f ? (uint)1 : (uint)0);
 
 						//V [0..1]
 
 						uint final = 0x00;
 
-						if( v < 0.5f )
+						if( h < 0.5f )
 						{
-							var water = v * 2.0f;
-							var finalF = water * 255.0f;
+							var waterBase = Math.Min( 1.0f, h * 3.0f );
 
-							uint red = isSmallerThan0 * 0x0f0000;
+							var water = waterBase * waterBase;
 
-							final = (uint)finalF | red;
+							var cyanBaseF = Math.Max( 0.0f, (h - (0.5f - 0.125f)) * 8.0f );
+
+							var greenF = cyanBaseF * 255.0f;
+
+							var green = ((uint)greenF) << 8;
+
+							var blueF = water * 255.0f;
+
+							uint red = isSmallerThan0 * 0x2f0000;
+
+							final = green | (uint)blueF | red;
 						}
 						else
 						{
-							var byteV = v * 255.0f;
+							var byteV = h * 255.0f;
 
-							var byteAsByte = (uint)byteV;
+							var byteAsByte = (((uint)byteV) & 0x0f) << 4 | 0x0f;
 
 							uint red = isLargerThan1 * 0x0f;
 
@@ -149,6 +161,27 @@ public partial class MapControl : UserControl, IMapView
 		_map = map;
 	}
 
+	public class DistToCenterComparer : IComparer<Chunk>
+	{
+		math.Int2 Pos;
+
+		public DistToCenterComparer( math.Int2 pos )
+		{
+			Pos = pos;
+		}
+
+		public int Compare( Chunk l, Chunk r )
+		{
+			var lDelta = l.Pos - Pos;
+			var rDelta = r.Pos - Pos;
+
+			var lTotal = lDelta.LengthSquared();
+			var rTotal = rDelta.LengthSquared();
+
+			return lTotal - rTotal;
+		}
+	}
+
 	public void DoUpdate( Func<math.Vec2, float> Fn )
 	{
 		_map = _map with { Layer = _map.Layer with { Fn = Fn } };
@@ -168,6 +201,8 @@ public partial class MapControl : UserControl, IMapView
 		while( !_chunksNeeded.IsEmpty ) _chunksNeeded.TryDequeue( out _ );
 		_chunks.Clear();
 
+		List<Chunk> chunks = new();
+
 		// @@@ TODO: Configify this
 		for( int y = 0; y < Map.Max.Y; y += 256 )
 		{
@@ -185,13 +220,34 @@ public partial class MapControl : UserControl, IMapView
 
 				var chunk = new Chunk( _map.Layer, perlin, new math.Int2( x, y ) );
 
-				_chunksNeeded.Enqueue( chunk );
+				chunks.Add( chunk );
+
 			}
+		}
+
+		chunks.Sort(new DistToCenterComparer( new math.Int2(-_worldOrigin.X + Size.Width >> 1 , -_worldOrigin.Y + Size.Height >> 1 ) ));
+
+		foreach( var ch in chunks )
+		{
+			_chunksNeeded.Enqueue( ch );
 		}
 
 		Monitor.Exit( this );
 
 		//FillinBitmap( _map.Layer );
+	}
+
+	public static class SRandom
+	{
+		static int seed = Environment.TickCount;
+
+		static readonly ThreadLocal<Random> random =
+				new ThreadLocal<Random>(() => new Random(Interlocked.Increment(ref seed)));
+
+		public static int Rand()
+		{
+			return random.Value.Next();
+		}
 	}
 
 	protected override void OnHandleCreated( EventArgs e )
@@ -216,12 +272,19 @@ public partial class MapControl : UserControl, IMapView
 
 							chunk.GenerateDetail( this, _viewInfo );
 
-							var chunkAdded = _chunks.TryAdd( chunk.Pos, chunk );
+							var chunkAdded = false;
 
-							if( !chunkAdded )
+							do
 							{
-								log.warn( $"Error adding a chunk {chunk.Pos}" );
-							}
+
+								chunkAdded = _chunks.TryAdd( chunk.Pos, chunk );
+
+								if( !chunkAdded )
+								{
+									log.warn( $"Error adding a chunk {chunk.Pos}" );
+									_chunks.TryRemove( chunk.Pos, out var oldChunk );
+								}
+							} while( !chunkAdded );
 
 							this.Invoke( () => {
 
@@ -271,7 +334,7 @@ public partial class MapControl : UserControl, IMapView
 		var chunkEndX = chunkStartX + ((e.ClipRectangle.Width + 255) >> 8);
 		var chunkEndY = chunkStartY + ((e.ClipRectangle.Height + 255) >> 8);
 
-		log.debug( $"Chunk ({chunkStartX}, {chunkStartY})x({chunkEndX}, {chunkEndY}) _worldOrigin({_worldOrigin.X}, {_worldOrigin.Y}) Rect({e.ClipRectangle.ToString()})" );
+		//log.debug( $"Chunk ({chunkStartX}, {chunkStartY})x({chunkEndX}, {chunkEndY}) _worldOrigin({_worldOrigin.X}, {_worldOrigin.Y}) Rect({e.ClipRectangle.ToString()})" );
 
 		for( int y = chunkStartY * 256; y <= chunkEndY * 256; y += 256 )
 		{
@@ -279,7 +342,7 @@ public partial class MapControl : UserControl, IMapView
 			{
 				var p = new math.Int2( x, y );
 
-				log.debug( $"Chunk ({p})" );
+				//log.debug( $"Chunk ({p})" );
 
 				var gotChunk = _chunks.TryGetValue( p, out Chunk chunk );
 				if( gotChunk )
@@ -287,7 +350,7 @@ public partial class MapControl : UserControl, IMapView
 					var origX = x + _worldOrigin.X;
 					var origY = y + _worldOrigin.Y;
 
-					log.debug( $"Draw ({origX}, {origY})" );
+					//log.debug( $"Draw ({origX}, {origY})" );
 
 					e.Graphics.DrawImageUnscaled( chunk.Detail, origX, origY );
 				}
@@ -369,8 +432,10 @@ public partial class MapControl : UserControl, IMapView
 		var perlin = new math.Vec2( perlinX, perlinY );
 
 		var height = _map.Layer.Fn( perlin );
+		
+		var meters = height >= 0.5f ? (height-0.5f) * 10000 : (height - 0.5f) * 10000;
 
-		_status = $"World Pixel({worldX}, {worldY}) Perlin({perlin.X:F3}, {perlin.Y:F3}), Height({height:F3})";
+		_status = $"World Pixel({worldX}, {worldY}) Perlin({perlin.X:F3}, {perlin.Y:F3}, {height:F3}), Meters({meters})";
 
 		FnChangeStatus( _status );
 
